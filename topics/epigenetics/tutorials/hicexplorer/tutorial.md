@@ -1,7 +1,23 @@
 ---
 layout: tutorial_hands_on
-topic_name: epigenetics
-tutorial_name: hicexplorer
+
+title: "Hi-C analysis of Drosophila melanogaster cells using HiCExplorer"
+zenodo_link: "https://doi.org/10.5281/zenodo.1183661"
+edam_ontology: ""
+questions:
+  - "Why is a Hi-C analysis useful?"
+  - "What is 'chromosome conformation capture'?"
+  - "What are main steps in order to generate and plot a Hi-C contact matrix?"
+time_estimation: "1h"
+key_points:
+  - "Hi-C helps to investigate the 3D structure of the genome and to uncover folding principles of chromatin."
+  - "In order to build a Hi-C contact matrix the reads have to be mapped to the reference genome."
+  - "Based on a contact matrix open and closed chromatin (A/B compartments) and topological associating domains (TADs) can be computed."
+contributors:
+  - joachimwolff
+  - fidelram
+  - vivekbhr
+  - polkhe
 ---
 
 # Introduction
@@ -14,6 +30,10 @@ For this the following steps are necessary to be performed:
 3. Plotting the Hi-C matrix
 4. Correction of Hi-C matrix
 5. TAD Calling
+6. A/B compartments computation
+7. pyGenomeTracks visualization
+8. Loop detection
+
 
 After a corrected Hi-C matrix is created other tools can be used to visualize it, call TADS or compare it with other matrices.
 
@@ -21,40 +41,45 @@ After a corrected Hi-C matrix is created other tools can be used to visualize it
 >
 > In this tutorial, we will deal with:
 >
-> 1. Mapping Hi-C data
-> 2. Create a contact matrix
-> 3. Learn how to correct a contact matrix
-> 4. Visualize a contact matrix
-> 5. Compute and visualize topological associating domains (TADs)
+> 1. TOC
 > {:toc}
 >
 {: .agenda}
 
-## Data upload
+# Data upload
 
 > ### {% icon hands_on %} Hands-on: Data upload
 >
 > 1. Create a new history
+>
+>    {% include snippets/create_new_history.md %}
+>
 > 2. Import from [Zenodo](https://doi.org/10.5281/zenodo.1183661).
 >
 >    > ### {% icon tip %} Tip: Importing data via links
 >    >
->    > * Copy the link location
->    > * Open the Galaxy Upload Manager
->    > * Select **Paste/Fetch Data**
->    > Below are the links to the read files that can be copied and pasted in the upload manager.
+>    > 1. Copy the link location
+>    > 2. Open the Galaxy Upload Manager
+>    > 3. Select **Paste/Fetch Data**
 >    >
->    > ```
->    > https://zenodo.org/record/1183661/files/HiC_S2_1p_10min_lowU_R1.fastq.gz
->    > https://zenodo.org/record/1183661/files/HiC_S2_1p_10min_lowU_R2.fastq.gz
->    > ```
+>    >    Below are the links to the read files that can be copied and pasted in the upload manager.
 >    >
->    > * Paste the links into the text field
->    > * Press **Start**
+>    >    ```
+>    >    https://zenodo.org/record/1183661/files/HiC_S2_1p_10min_lowU_R1.fastq.gz
+>    >    https://zenodo.org/record/1183661/files/HiC_S2_1p_10min_lowU_R2.fastq.gz
+>    >    ```
+>    >
+>    > 4. Paste the links into the text field
+>    > 5. Press **Start**
 >    {: .tip}
 >
 > 3. Rename the data set to something meaningful, e.g. `HiC_S2_1p_10min_lowU_R1` and `HiC_S2_1p_10min_lowU_R2`.
 > By default, when data is imported via its link, Galaxy names it with its URL.
+>
+> > ### {% icon comment %} Get data from public sources
+> > HiCExplorer needs as input the forward and reverse strand of a pair end read which are mapped independently. A usual start point for a typical analysis is the given GSE number of a publication, e.g. GSE63525 for Rao 2014. To get the actual data, go to [NCBI](https://www.ncbi.nlm.nih.gov/geo/) and search for the [GSE number](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE63525). In the section 'Samples' the GSM numbers of all samples are given. Select the correct one for you, and go to the [European Nucleotide Archive](https://www.ebi.ac.uk/ena) and enter the GSM number. Select a matching result e.g. [SRX764936](https://www.ebi.ac.uk/ena/data/view/SRX764936) and download the data given in the row 'FASTQ files (FTP)' the forward and reverse strand.
+> > It is important to have the forward and reverse strand individual as a FASTQ file and to map it individually, HiCExplorer can not work with interleaved files.
+> {: .comment}
 >
 {: .hands_on}
 
@@ -69,17 +94,16 @@ We have used the HiCExplorer successfully with bwa, bowtie2 and hisat2. In this 
 
 > ### {% icon hands_on %} Hands-on: Mapping reads
 >
-> 1. **Map with BWA-MEM 0.8.0** {% icon tool %}: Run Map with BWA-MEM on both strands `HiC_S2_1p_10min_lowU_R1` and `HiC_S2_1p_10min_lowU_R2` with:
->    - "Will you select a reference genome from your history or use a built-in index?" to `Use a built-in index`
->    - "Select a reference genome" to `dm3`
->    - "Is this library mate-paired?" to `Single-end or interleaved paired-end`
+> 1. **Map with Bowtie** {% icon tool %}: Run Bowtie on both strands `HiC_S2_1p_10min_lowU_R1` and `HiC_S2_1p_10min_lowU_R2` with:
+>    - "Is this single or paired library" to `Single-end`
 >    - Set multiple data sets
 >    - "FASTQ file" to `HiC_S2_1p_10min_lowU_R1`and `HiC_S2_1p_10min_lowU_R2`
->    - "BWA settings to use" to `Full parameter List`
->    - "Gap extension penalty (-E)" to `50`
->    - "Penalty for clipping (-L)" to `0`
+>    - "Will you select a reference genome from your history or use a built-in index?" to `Use a built-in index`
+>    - "Select a reference genome" to `dm3`
+>    - "Do you want to tweak SAM/BAM Options?" to `Yes`
+>    - "Reorder output to reflect order of the input file" to `Yes`
 >
-> 2. Rename the output of the tool according to the corresponding files: `R1.sam` and `R2.sam`
+> 2. Rename the output of the tool according to the corresponding files: `R1.bam` and `R2.bam`
 >
 {: .hands_on}
 
@@ -91,9 +115,9 @@ For this step we will use [hicBuildMatrix](http://hicexplorer.readthedocs.io/en/
 
 > ### {% icon hands_on %} Hands-on: hicBuildMatrix
 >
-> 1. **hicBuildMatrix** {% icon tool %}: Run hicBuildMatrix on the `R1.sam` and `R2.sam` from previous step with modifying the following parameters:
->    - "1: Sam/Bam files to process" to `R1.sam`
->    - "2: Sam/Bam files to process" to `R2.sam`
+> 1. **hicBuildMatrix** {% icon tool %}: Run hicBuildMatrix on the `R1.bam` and `R2.bam` from previous step with modifying the following parameters:
+>    - "1: Sam/Bam files to process" to `R1.bam`
+>    - "2: Sam/Bam files to process" to `R2.bam`
 >    - "Choose to use a restriction cut file or a bin size" to `Bin size`
 >    - "Bin size in bp" to `10000`
 >    - "Sequence of the restriction site" to `GATC`
@@ -143,7 +167,7 @@ A 10kb bin matrix is too large to plot, it's better to reduce the resolution. We
 >
 {: .hands_on}
 
-The resulting plot of the 1 Mb contact matrix should look like: 
+The resulting plot of the 1 Mb contact matrix should look like:
 ![TAD plot](../../images/plotMatrix.png)
 
 # Correction of Hi-C matrix
@@ -155,7 +179,7 @@ The resulting plot of the 1 Mb contact matrix should look like:
 Matrix correction works in two steps: first a histogram containing the sum of contact per bin (row sum) is produced. This plot needs to be inspected to decide the best threshold for removing bins with lower number of reads. The second steps removes the low scoring bins and does the correction.
 
 > ### {% icon hands_on %} Hands-on: Matrix diagnostic
-> 
+>
 > 1. **hicCorrectMatrix** {% icon tool %}: Run hicCorrectMatrix on the output from hicBuildMatrix `10 kb contact matrix` adjusting the parameters:
 >    - "Range restriction (in bp)" to `Diagnostic plot`
 >    - "Chromosomes to include (and order to plot in)" to `chr2L`
@@ -230,37 +254,67 @@ TAD calling works in two steps: First HiCExplorer computes a TAD-separation scor
 >    - "Maximum window length (in bp) to be considered to the left and to the right of each Hi-C bin." to `100000`
 >    - "Step size when moving from minDepth to maxDepth" to `10000`
 >    - "Multiple Testing Corrections" to `False discovery rate`
->    - "q-value" to `0.05` 
+>    - "q-value" to `0.05`
 >    - "Minimum threshold of the difference between the TAD-separation score of a putative boundary and the mean of the TAD-sep. score of surrounding bins." to `0.001`
 >
 {: .hands_on}
 
 As an output we get the boundaries, domains and scores separated files. We will use in the plot later only the TAD-score file.
 
+# A/B compartments computation
 
 > ### {% icon hands_on %} Hands-on: Computing A / B compartments
 >
 > 1. **hicPCA** {% icon tool %}: Run hicPCA adjusting the parameters:
 >    - "Matrix to compute on" to `corrected contact matrix dm3 large`
 >    - "Output file format" to `bigwig`
+>    - "Return internally used Pearson matrix" to `Yes`
 >
 {: .hands_on}
 
+> ### {% icon hands_on %} Hands-on: Plotting the pearson matrix and PCA track
+>
+> 1. **hicPlotMatrix** {% icon tool %}: Run hicPlotMatrix on `pearson_matrix from PCA computation` adjusting the parameters:
+>    - "Plot title" to `Pearson matrix and PC1`
+>    - "Chromosomes to include" to `chr2L`
+>    - "Color map to use for the heatmap" to `gist_heat`
+>    - "Datatype of eigenvector file" to `bigwig`
+>    - "Eigenvector file" to `hicPCA on [...] PC1`
+>
+{: .hands_on}
+
+> 1. **hicPlotMatrix** {% icon tool %}: Run hicPlotMatrix on `pearson_matrix from PCA computation` adjusting the parameters:
+>    - "Plot title" to `Pearson matrix and PC2`
+>    - "Chromosomes to include" to `chr2L`
+>    - "Color map to use for the heatmap" to `gist_heat`
+>    - "Datatype of eigenvector file" to `bigwig`
+>    - "Eigenvector file" to `hicPCA on [...] PC2`
+>
+{: .hands_on}
+
+
+![Pearson PC1](../../images/pearson_pc1.png)
+
+
+![Pearson PC2](../../images/pearson_pc2.png)
+
+The first principal component correlates with the chromosome arms, while the second component correlates with A/B compartments. 
+
 # Integrating Hi-C and other data
 
-We can plot the TADs for a given chromosomal region. For this we will use [hicPlotTADs](http://hicexplorer.readthedocs.io/en/latest/content/tools/hicPlotTADs.html). But before make sure to import [gene track file](https://zenodo.org/record/1176070/files/dm6_genes.bed) in .bed format from [Zenodo](https://doi.org/10.5281/zenodo.1176070).
+We can plot the TADs for a given chromosomal region. For this we will use [pyGenomeTracks](http://hicexplorer.readthedocs.io/en/latest/content/tools/hicPlotTADs.html).
 
 For the next step we need additional data tracks. Please load `dm3_genes.bed`, `H3K27me3.bw`, `H3K36me3.bw` and `H4K16ac.bw` to your history.
 
 > ### {% icon hands_on %} Hands-on: Plotting TADs
 >
-> 1. **hicPlotTADs** {% icon tool %}: Run hicPlotTADs adjusting the parameters:
+> 1. **pyGenomeTracks** {% icon tool %}: Run pyGenomeTracks adjusting the parameters:
 >    - "Region of the genome to limit the operation" to `chr2L:14500000-16500000`
 >    - "Choose style of the track" to `TAD visualization`
 >         - "Plot title" to `HiC dm3 chr2L:14500000-16500000`
 >         - "Matrix to compute on." to the corrected matrix from hicCorrectMatrix step
 >         - "Depth" to `750000`
->         - "Width" to `4`
+>         - "Height" to `4`
 >         - "Boundaries file" to `hicFindTads on data XX: TAD domains`
 >         - "Show x labels" to `Yes`
 >
@@ -268,7 +322,7 @@ For the next step we need additional data tracks. Please load `dm3_genes.bed`, `
 >        - "Choose style of the track" to `Bedgraph matrix track`
 >        - "Plot title" to `TAD separation score`
 >        - "Track file bedgraph format" to `hicFindTads on data XX: TAD information in bm file`
->        - "Width" to `4`
+>        - "Height" to `4`
 >        - "Set type to lines" to 'True'
 >
 >
@@ -276,58 +330,110 @@ For the next step we need additional data tracks. Please load `dm3_genes.bed`, `
 >        - "Choose style of the track" to `Bigwig track`
 >        - "Plot title" to `PC1`
 >        - "Track file bigwig format" the first computed `hicPCA` result
->        - "Minimum value" to `-0.03`
->        - "Maximum value" to `0.03`
->        - "Width" to `1.5`
+>        - "Height" to `1.5`
 >        - "Color of track" to a color of your choice
 >
 >    - "+Insert Include tracks in your plot"
 >        - "Choose style of the track" to `Bigwig track`
 >        - "Plot title" to `PC2`
 >        - "Track file bigwig format" the second computed `hicPCA` result
->        - "Minimum value" to `-0.03`
->        - "Maximum value" to `0.03`
->        - "Width" to `1.5`
+>        - "Height" to `1.5`
 >        - "Color of track" to a color of your choice
 >
 >    - "+Insert Include tracks in your plot"
 >        - "Choose style of the track" to `Bigwig track`
 >        - "Plot title" to `H3K36me3`
 >        - "Track file bigwig format" to `H3K36me3`
->        - "Width" to `1.5`
+>        - "Height" to `1.5`
 >        - "Color of track" to a color of your choice
 >
 >    - "+Insert Include tracks in your plot"
 >        - "Choose style of the track" to `Bigwig track`
 >        - "Plot title" to `H3K27me3`
 >        - "Track file bigwig format" to `H3K27me3`
->        - "Width" to `1.5`
+>        - "Height" to `1.5`
 >        - "Color of track" to a color of your choice
 >
 >    - "+Insert Include tracks in your plot"
 >        - "Choose style of the track" to `Bigwig track`
 >        - "Plot title" to `H4K16ac`
 >        - "Track file bigwig format" to `H4K16ac`
->        - "Width" to `1.5`
+>        - "Height" to `1.5`
 >        - "Color of track" to a color of your choice
 >
 >    - "+Insert Include tracks in your plot"
 >        - "Choose style of the track" to `Gene track`
 >        - "Plot title" to `dm3 genes`
 >        - "Track file bedgraph format" the imported .bed file
->        - "Width" to `3`
+>        - "Height" to `3`
 >        - "Type" to `genes`
 >        - "Gene rows" to `15`
 >        - "Color of track" to a color of your choice
 >
+>    - "+Insert Include tracks in your plot"
+>        - "Choose style of the track" to `Vlines track`
+>        - "Track file bed format" to `hicFindTads on data XX: TAD domains`
 {: .hands_on}
 
-The resulting image should look like this one: 
+The resulting image should look like this one:
 ![TAD plot](../../images/plotTADs.png)
+
+# Loop detection
+
+In Hi-C data, the term `loop` refers to a 3D structure which represents enhancer-promoter, gene, architectural or polycomb-mediated interactions. These interactions have the characteristics to be enriched in a single region compared to the local background. These loops are also called long-range interactions with an expected maximum distance of 2 MB (see [Rao et al. 2014](https://doi.org/10.1016/j.cell.2014.11.021)).
+
+![Loops visualization](../../images/loops_bonev_cavalli.png)
+
+To compute loops, we have to import a new data set from the shared library to our history: `GM12878-MboI-allreps-filtered.10kb.cool` or download it via the <a href="ftp://cooler.csail.mit.edu/coolers/hg19/Rao2014-GM12878-MboI-allreps-filtered.10kb.cool">FTP cool files server</a>. (FTP links seems to be blocked, therefore the full URL: `ftp://cooler.csail.mit.edu/coolers/hg19/Rao2014-GM12878-MboI-allreps-filtered.10kb.cool`)
+
+This dataset is from the human cell GM12878, mapped to hg19 and of 10 kb resolution. We use a new file because to detect loop structures the read coverage is required to be in the hunderts of million; this was not the case for the previous used drosophila dataset.
+
+> ### {% icon hands_on %} Hands-on: Matrix information 
+>
+> 1. **hicInfo** {% icon tool %}: Run hicInfo adjusting the parameters:
+>    - "Select" `Multiple datasets`
+>    - "Matrix to compute on" to `corrected contact matrix dm3 large` and `GM12878-MboI-allreps-filtered.10kb.cool`
+{: .hands_on}
+
+We now investigate the result of hicInfo and see that the new imported file is having 1.2 billion non-zero elements, while the drosophila Hi-C interaction matrix has around 12 million non-zero elements.
+
+> ### {% icon hands_on %} Hands-on: Computing loops
+>
+> 1. **hicDetectLoops** {% icon tool %}: Run hicDetectLoops adjusting the parameters:
+>    - "Matrix to compute on" to `GM12878-MboI-allreps-filtered.10kb.cool`
+>    - "Peak width" to `6`
+>    - "Window size" to `10`
+>    - "P-value preselection" to `0.01`
+>    - "P-value" to `0.01`
+>    - "Chromosomes to include" to `chr1`
+>
+{: .hands_on}
+
+
+The detection of the loops is based on a pre-selection of interactions, a p-value given a continuous negative binomial distribution over all interactions of a relative distance is computed. All interactions are filtered with a threshold (`p-value preselection`) to retrieve loop candidates. In a second step, the selected peak candidate is compared against its background using a Wilcoxon rank-sum test.
+
+As an output we get a loop file containing the positions of both anchor points of the loop and the p-value of the used statistical test.
+
+![Loops computed_file](../../images/loops_result.png)
+
+> ### {% icon hands_on %} Hands-on: Plotting of loops
+>
+> 1. **hicPlotMatrix** {% icon tool %}: Run hicPlotMatrix adjusting the parameters:
+>    - "Matrix to compute on" to `GM12878-MboI-allreps-filtered.10kb.cool`
+>    - "Plot title" to `Loops`
+>    - "Plot only this region" to `chr1:18000000-22000000`
+>    - "Plot the log1p of the matrix values" to `Yes`
+>    - "Add detected loops" to `Computed loops` of the previous step
+>    - "DPI for image" to `300`
+>
+{: .hands_on}
+
+![Loops result_plot](../../images/loops_plot.png)
+
 # Conclusion
 {:.no_toc}
 
-In this tutorial we used HiCExplorer to analyze drosophila melanogaster cells. We mapped the chimeric reads and created a contact matrix, to reduce noise this contact matrix was normalized. We showed how to visualize a contact matrix and how we can investigate topological associating domains and relate them to additional data like gene tracks.
+In this tutorial we used HiCExplorer to analyze drosophila melanogaster cells. We mapped chimeric reads and created a contact matrix, to reduce noise this contact matrix was normalized. We showed how to visualize a contact matrix and how we can investigate topological associating domains and relate them to additional data like gene tracks. Moreover, we used a human Hi-C interaction matrix to compute loop structures.
 
 
  To improve your learned skills we offer an additional tutorial based on mouse stem cells: [following work](http://hicexplorer.readthedocs.io/en/latest/content/example_usage.html).

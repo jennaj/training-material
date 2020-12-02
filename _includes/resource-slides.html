@@ -1,0 +1,11 @@
+{% if include.material.slides %}
+    <a class="topic-icon" href="{{ site.baseurl }}/topics/{{ include.topic }}/tutorials/{{ include.material.tutorial_name }}/slides.html">
+    {% icon slides %}
+</a>
+{% endif %}
+{% if include.material.video %}
+/
+<a class="topic-icon" href="{{ site.baseurl }}/videos/#video-{{ include.topic }}-{{ include.material.tutorial_name }}">
+    {% icon video %}
+</a>
+{% endif %}

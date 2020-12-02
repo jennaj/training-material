@@ -1,0 +1,228 @@
+---
+layout: base_slides
+logo: "GTN"
+
+title: "Gearing towards production"
+contributors:
+  - natefoo
+  - blankenberg
+  - abdulrahmanazab
+  - martenson
+---
+
+# Production server
+
+* Used by multiple people
+* Designed to be resilient, scalable
+* Designed to be easily managed
+
+---
+
+# Configuration Options
+
+---
+class: reduce90
+
+# Configuring uWSGI
+
+Important options in the `uwsgi` section
+
+option | description
+---- | ----
+`http` | port and IP on which to listen for HTTP requests, `:8080` for port `8080` on all network interfaces. **For a production server, you should use `socket:` and a proxy server**.
+`socket` | port and IP on which to listen for uWSGI protocol requests, `127.0.0.1:8000` for port `8000` on localhost.
+`processes` | number of uWSGI *web workers*.
+`threads` | number of threads for each web worker.
+`offload-threads` | number of threads for internal routing requests, 1-2 is sufficient.
+`master` | use uWSGI master process manager, defaults to `false` for dev compatibility but should be `true` in production.
+`mule-reload-mercy` | time to gracefully wait for mule shutdown, set > `monitor_thread_join_timeout` galaxy option.
+
+.footnote[modifying `galaxy.yml`]
+
+---
+# Basics for the Galaxy App
+
+Important options in the `galaxy` section
+
+option | description
+---- | ----
+`database_connection` | SQLAlchemy connection string for database.
+`tool_config_file` | List of tool panel config files to load.
+`tool_dependency_dir` | folder where tool dependencies (Conda packages) are installed.
+
+.left[Make sure dev settings `debug` and `use_interactive` are disabled.]
+
+.footnote[modifying `galaxy.yml`]
+
+---
+# Authentication Options
+
+option | description
+---- | ----
+`require_login` | Force everyone to log in (disable anonymous access).
+`allow_user_creation` | Allow unregistered users to create new accounts (otherwise, they will have to be created by an admin).
+`allow_user_deletion` | Allow administrators to delete accounts.
+`allow_user_impersonation` | Allow administrators to log in as other users (useful for debugging/support).
+
+.footnote[modifying `galaxy.yml`]
+
+---
+# Securing your Object IDs
+
+* User facing object IDs
+  * Galaxy uses the Blowfish cipher to obscure integer IDs.
+  * Prevents guessing the hashes for various Galaxy objects.
+  * `id_secret` is used as the Blowfish key.
+  * Changing the default `id_secret` is a must.
+  * Changing `id_secret` will change & invalidate existing URLs (e.g. datasets, histories, workflows, etc).
+
+.footnote[modifying `galaxy.yml`]
+
+---
+# Customizing your "Brand"
+
+option | description
+---- | ----
+`brand` | appends "/{brand}" to the "Galaxy" text in the masthead.
+`logo_url` | URL linked by the "Galaxy/brand" text.
+`helpsite_url` | URL linked by the "Galaxy Help" link in the "Help" menu.
+`wiki_url` | URL linked by the "Wiki" link in the "Help" menu.
+`support_url` | URL linked by the "Support" link in the "Help" menu.
+`citation_url` | URL linked by the "How to Cite Galaxy" link in the "Help" menu.
+`search_url` | URL linked by the "Search" link in the "Help" menu.
+`mailing_lists_url` | URL linked by the "Mailing Lists" link in the "Help" menu.
+`screencasts_url` | URL linked by the "Videos" link in the "Help" menu.
+`terms_url` | URL linked by the "Terms and Conditions" link on the registration form.
+`qa_url` | URL linked by the "Galaxy Q&A" link in the "Help" menu.
+
+.footnote[modifying `galaxy.yml`]
+
+---
+# Adding a Notice Banner
+
+option | sample value
+---- | ----
+`message_box_visible` | `true`
+`message_box_content` | `Downtime scheduled Sunday at Noon to one.`
+`message_box_class` | `warning` (also: `error`, `info`)
+
+.footnote[modifying `galaxy.yml`]
+
+---
+# Update the welcome page
+
+Welcome page is `$GALAXY_ROOT/static/welcome.html` and is the first thing that
+users see. It is a good idea to extend it with things like:
+- Downtimes/Maintenance periods
+- New tools
+- Publications relating to your Galaxy
+
+.left[No restarting is necessary.]
+
+---
+# Client Browser Security
+
+option | description
+---- | ----
+`sanitize_all_html` | by default, Galaxy sanitizes all "text/html" tool outputs. Setting to false potentially exposes users to XSS attacks.
+`sanitize_whitelist_file` | manually override html sanitization for listed tools. Can set in admin interface.
+`serve_xss_vulnerable_mimetypes` | certain filetypes (e.g. SVG) can contain JS that is vulnerable to XSS (Cross-site scripting) and are served as "plain/text" by default.
+`allowed_origin_hostnames` | Returns Access-Control-Allow-Origin response header that matches the Origin header of the request.
+
+.footnote[modifying `galaxy.yml`]
+
+---
+# Debugging
+
+These should never be enabled on a public site.
+
+option | description
+---- | ----
+`debug` | enable debug options, preserves cluster job data on disk (but use `cleanup_job` for this).
+`use_profile` | Python profiler on requests.
+`use_printdebug` | Anything "print"ed within a Galaxy Web thread is exposed to user.
+`use_interactive` | Enable live debugging in your browser.
+
+.footnote[modifying `galaxy.yml`]
+
+---
+# Configuring FTP
+
+option | description
+---- | ----
+`ftp_upload_dir` | Directory containing subdirectories matching users' identifier (defaults to e-mail).
+`ftp_upload_site` | Hostname of your FTP server provided to users in the help text. Must set to enable FTP import.
+`ftp_upload_dir_identifier` | User attribute for subdirectory naming. 'email' (${user.email}) is default, but 'id' or 'username' are also common.
+`ftp_upload_dir_template` | Python string template used to determine a users FTP upload directory (${ftp_upload_dir}/${ftp_upload_dir_identifier}).
+`ftp_upload_purge` | Delete files after FTP import (true).
+
+.footnote[modifying `galaxy.yml`]
+
+---
+class: reduce90
+
+# Configuring Data Library Path Uploads
+
+Admin options
+
+option | description
+---- | ----
+`library_import_dir` | Browse and upload files from configured directory.
+`allow_path_paste` | Allow admins to paste any path to upload (e.g. `file://`), applies also to the general 'upload tool'.
+
+User options
+
+option | description
+---- | ----
+`user_library_import_dir` | Root directory containing sub-directories named by user emails. A nifty setup is that the value is the same as for `ftp_upload_dir` allowing users to upload files via FTP and then import them either in history or data library.
+`user_library_import_dir_auto_creation` | Create user's folder upon login.
+`user_library_import_symlink_whitelist` | Directories that users are allowed to symlink to.
+`user_library_import_check_permissions` | If Galaxy usernames match system usernames enable this to use UNIX permissions.
+
+.footnote[modifying `galaxy.yml`]
+
+---
+class: reduce90
+
+# Configuring SMTP
+
+SMTP server
+
+option | description
+---- | ----
+`smtp_server` | host:port of SMTP server to use. Uses STARTTLS, but will fallback.
+`smtp_username` | Username for SMTP server.
+`smtp_password` | Password for SMTP server. STARTTLS recommended on SMTP server.
+`smtp_ssl` | If SMTP server requires SSL from connection start, set to true.
+
+Addresses
+
+option | description
+---- | ----
+`error_email_to` | Address to send user error reports to.
+`email_from` | Return address used in automatic user notifications. (`<galaxy-no-reply@HOSTNAME>`)
+`mailing_join_addr` | Mailing list to subscribe users to during registration.
+
+.footnote[modifying `galaxy.yml`]
+
+---
+class: left
+
+# Configuring SMTP for Bug Reports
+
+Install a mail tranfer agent (MTA):
+* Here is a tutorial on how to [install Postfix MTA](https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-postfix-as-a-send-only-smtp-server-on-ubuntu-14-04)
+
+Galaxy configuration:
+1. Set `smtp_server: localhost:25`
+2. Set `error_email_to: you@email.tld` (use your email)
+3. Run a Galaxy tool that produces an error.
+4. attempt to send a bug report
+
+---
+# galaxy.yml full options
+
+a.k.a. Everything You Always Wanted to Know About `galaxy.yml`
+* [config schema](https://github.com/galaxyproject/galaxy/blob/dev/lib/galaxy/webapps/galaxy/config_schema.yml)
+* [config sample](https://github.com/galaxyproject/galaxy/blob/dev/lib/galaxy/config/sample/galaxy.yml.sample)
+* [config docs](https://docs.galaxyproject.org/en/master/admin/config.html)

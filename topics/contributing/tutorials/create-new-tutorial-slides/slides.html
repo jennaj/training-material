@@ -1,8 +1,24 @@
 ---
 layout: tutorial_slides
-topic_name: contributing
-tutorial_name: create-new-tutorial-slides
 logo: "GTN"
+
+title: "Creating a new tutorial - Slides"
+questions:
+  - "How to format slides?"
+  - "How do we add presenter notes?"
+  - "How to use the features of the slide show tool?"
+  - "What sort of content should be included in slides?"
+objectives:
+  - "Create a new set of slides"
+  - "Add presenter comments"
+time_estimation:
+key_points:
+  - "Slides are often presented before the hands-on portion, provide relevant background information"
+  - "Provide examples that are relevant to your audience"
+contributors:
+  - hexylena
+  - bebatut
+  - shiltemann
 ---
 
 # Slides
@@ -19,8 +35,8 @@ logo: "GTN"
 ## Content
 
 - Background information for the tutorial. E.g.:
-  - Motivation behind why X is useful
-  - Conepts needed to get most out of tutorial
+  - Motivation why X is useful
+  - Concepts needed to get most out of tutorial
 - Examples relevant to audience
   - Avoid: "here is a feature to add link type tracks"
   - Try for: "If you want to visualise SVs in cancer, ... this link type tracks are useful"
@@ -44,9 +60,9 @@ and numbered list
 1. Item
 2. Item
 
-Some text with a [link](https://example.com/) and an image:
+Some text with a [link](https://example.org/) and an image:
 
-![Description of the image](/training-material/assets/images/GTN-60px.png)
+![Description of the image]({{ site.baseurl }}/assets/images/GTN-60px.png)
 ]
 
 .pull-right[
@@ -63,9 +79,9 @@ and numbered list
 1. Item
 2. Item
 
-Some text with a [link](https://example.com/) and an image:
+Some text with a [link](https://example.org/) and an image:
 
-![Description of the image](/training-material/assets/images/GTN-60px.png)
+![Description of the image]({{ site.baseurl }}/assets/images/GTN-60px.png)
 ---
 ```
 ]
@@ -86,17 +102,17 @@ Slides should begin with a header and end with `---`
 .left[Left-aligned text]
 .center[Centered text]
 .right[Right-aligned text]
-.left[![Left-aligned image](/training-material/assets/images/GTN-60px.png)]
-.center[![Centered image](/training-material/assets/images/GTN-60px.png)]
-.right[![Right-aligned image](/training-material/assets/images/GTN-60px.png)]
+.left[![Left-aligned image]({{ site.baseurl }}/assets/images/GTN-60px.png)]
+.center[![Centered image]({{ site.baseurl }}/assets/images/GTN-60px.png)]
+.right[![Right-aligned image]({{ site.baseurl }}/assets/images/GTN-60px.png)]
 
 ```markdown
 .left[Left-aligned text]
 .center[Centered text]
 .right[Right-aligned text]
-.left[![Left-aligned image](/training-material/assets/images/GTN-60px.png)]
-.center[![Centered image](/training-material/assets/images/GTN-60px.png)]
-.right[![Right-aligned image](/training-material/assets/images/GTN-60px.png)]
+.left[![Left-aligned image]({{ site.baseurl }}/assets/images/GTN-60px.png)]
+.center[![Centered image]({{ site.baseurl }}/assets/images/GTN-60px.png)]
+.right[![Right-aligned image]({{ site.baseurl }}/assets/images/GTN-60px.png)]
 ```
 
 ???
@@ -138,11 +154,11 @@ Demo:
 
 10%
 
-.image-10[ ![](/training-material/assets/images/GTN-60px.png) ]
+.image-10[ ![]({{ site.baseurl }}/assets/images/GTN-60px.png) ]
 
 50%
 
-.image-50[ ![](/training-material/assets/images/GTN-60px.png) ]
+.image-50[ ![]({{ site.baseurl }}/assets/images/GTN-60px.png) ]
 
 ]
 .pull-right[
@@ -151,18 +167,18 @@ Source:
 ```markdown
 10%
 .image-10[
-  ![](/training-material/assets/images/GTN-60px.png)
+  ![]({{ site.baseurl }}/assets/images/GTN-60px.png)
 ]
 
 50%
 .image-50[
-  ![](/training-material/assets/images/GTN-60px.png)
+  ![]({{ site.baseurl }}/assets/images/GTN-60px.png)
 ]
 ```
 ]
 
 
-There are [other CSS classes available](https://github.com/galaxyproject/training-material/blob/master/assets/css/slides.css#L67) for other sizes
+There are [other CSS classes available](https://github.com/galaxyproject{{ site.baseurl }}/blob/master/assets/css/slides.css#L67) for other sizes
 ---
 
 
@@ -251,7 +267,7 @@ This is achived with the `.pull-left` and `.pull-right` classes.
 
 ```markdown
 .pull-left[
-Some text, as many text as we want.....
+Some text, as many texts as we want...
 
 or even table
 
@@ -262,7 +278,7 @@ row2 | r2c2 | r2c3
 row3 | r3c2 | r3c3
 ]
 
-.pull-right[ ![](/training-material/assets/images/GTN-60px.png) ]
+.pull-right[ ![]({{ site.baseurl }}/assets/images/GTN-60px.png) ]
 ```
 
 Will be rendered as:
@@ -285,7 +301,7 @@ row3 | r3c2 | r3c3
 ]
 
 .pull-right[
-![](/training-material/assets/images/GTN-60px.png)
+![]({{ site.baseurl }}/assets/images/GTN-60px.png)
 ]
 
 ---
