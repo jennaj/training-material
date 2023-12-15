@@ -20,9 +20,6 @@ subtopic: manage
 ---
 
 
-# Introduction
-{:.no_toc}
-
 Advanced uses of Galaxy often require the use of dataset collections,
 which can contain between one and tens of thousands of datasets.
 Grouping datasets in this way has numerous advantages:
@@ -32,15 +29,18 @@ Grouping datasets in this way has numerous advantages:
 
 While collections can be split in any way, doing so for multi-factor analysis
 quickly becomes cumbersome and messy. An alternative is to label collection
-elements with special group tags. These tags can be displayed in the Tool form,
-allowing users to select subsets of collections.
+elements with special group tags, i.e. tags prefixed by the string `group:`.
+Note that group tags currently do not propagate, i.e. they are not inherited
+to datasets resulting from analyses. These tags can be displayed in the Tool
+form, allowing users to select subsets
+of collections.
 
 This tutorial outlines how to set and use group tags with the DESeq2 tool.
 For a more detailed description and background for differential expression
 testing see the [Reference-based RNA-Seq data analysis]({{ site.baseurl }}/topics/transcriptomics/tutorials/ref-based/tutorial.html).
 
 
-> ### Agenda
+> <agenda-title></agenda-title>
 >
 > In this tutorial, we will cover:
 >
@@ -51,21 +51,24 @@ testing see the [Reference-based RNA-Seq data analysis]({{ site.baseurl }}/topic
 
 # Setting group tags using the apply rules tool
 
-There are three ways to set group tags:
-  - Using the rule builder / apply_rules tool
+There are several ways to set group tags:
+  - Using the Rule Based Uploader
   - Using the "Tag elements from file" tool
+  - Using the "Apply Rules" tool
   - Manually adding dataset tags with the prefix `group:`
 
 We will use the first two methods in this tutorial.
-The second method works at any step during the analysis.
+The second and third methods work at any step during the analysis.
+Note that the function of the "Apply Rules" tool is (nearly) identical
+to the Rule Based Uploader. 
 
 ## Set group tags during upload
 
-> ### {% icon hands_on %} Hands-on: Set group tags during upload
+> <hands-on-title>Set group tags during upload</hands-on-title>
 >
 > 1. Create a new history for this tutorial
 >
->    {% include snippets/create_new_history.md %}
+>    {% snippet faqs/galaxy/histories_create_new.md %}
 >
 > 2. Open the Galaxy Upload Manager ({% icon galaxy-upload %} on the top-right of the tool panel)
 > 3. Click on **Rule-based** on the top
@@ -99,12 +102,12 @@ The second method works at any step during the analysis.
 >
 >    - Click on **Rules** and then **Add / Modify Column Definitions**
 >    - Click on **Add Definition** and select:
->      - *"URL"*: Column A
+>      - *"URL"*: Column A (Note that this option is absent when using the "Apply rules tool")
 >      - *"List Identifiers"*: Column B
->      - *"Group Tags"*: Columns C and D
+>      - *"Group Tags"*: Columns C and D (Select Column C first and then add D by clicking on *"... Add another column"*)
 >    - Click **Apply**
 >    - Enter a name for the new collection
->    - Click **Build**
+>    - Click **Upload**
 >
 > 8. Expand the generated collection and the files in it and check their names and tags
 >
@@ -115,7 +118,7 @@ The second method works at any step during the analysis.
 
 We now want to add group tags using the "Tag elements from file" tool.
 
-> ### {% icon hands_on %} Hands-on: Upload and create a collection
+> <hands-on-title>Upload and create a collection</hands-on-title>
 >
 > 1. Create a new history for this tutorial
 > 2. Import the following files
@@ -130,19 +133,19 @@ We now want to add group tags using the "Tag elements from file" tool.
 >    https://zenodo.org/record/1185122/files/GSM461182_untreat_single.counts
 >    ```
 >
->    {% include snippets/import_via_link.md %}
+>    {% snippet faqs/galaxy/datasets_import_via_link.md %}
 >
-> 3. Click on the {% icon galaxy-selector %} icon (**Operations on multiple datasets**)
-> 4. Check all new datasets
-> 5. Click on **For all selected...** and then **Build Dataset List**
-> 6. Enter a name for the new collection and click **Create list**
+> 3. Create a **Dataset List (Collection)** with these 7 files
+>
+>    {% snippet faqs/galaxy/collections_build_list.md datasets_description="The 7 datasets you've just imported" n="7" %}
+>
 {: .hands_on}
 
 We have now a collection with our files. We can now either upload a tabular file containing the element identifiers
 and the tags we want to apply, or we can extract the element identifiers and extract the tags using a Regular Expression.
 We will do the latter.
 
-> ### {% icon hands_on %} Hands-on: Set group tags using the "Tag elements from file" tool
+> <hands-on-title>Set group tags using the "Tag elements from file" tool</hands-on-title>
 > 1. **Extract element identifiers** {% icon tool %}
 >      - {% icon param-collection %} *"Dataset collection"*: created collection
 > 2. **Replace Text in entire line** {% icon tool %}
@@ -152,11 +155,11 @@ We will do the latter.
 >            - *"Find pattern"*: `(.*)_(.*)_(.*).counts`
 >            - *"Replace with"*: `\1_\2_\3.counts\tgroup:\2\tgroup:\3`
 >
->     This step add an additional columns that can be used with the ``Tag elements from file`` tool
+>     This step adds an additional columns that can be used with the ``Tag elements from file`` tool
 >
 > 3. Change the datatype to `tabular`
 >
->    {% include snippets/change_datatype.md datatype="tabular" %}
+>    {% snippet faqs/galaxy/datasets_change_datatype.md datatype="tabular" %}
 >
 > 4. **Tag elements from file** {% icon tool %}
 >      - {% icon param-collection %} *"Input Collection"*: created collection
@@ -169,14 +172,14 @@ You should now have a properly tagged collection of tabular files that can be us
 
 DESeq2 has two modes for specifying factors. One can either
 select datasets corresponding to factors, or use group tags
-to specify factors. We will use the grop tags present in
+to specify factors. We will use the group tags present in
 our collection to specify factors.
 
 The tool interface will prompt you with the group tags that are available for your inputs:
 
 ![Group tags in the tool UI](../../images/group-tags/tool-ui.png)
 
-> ### {% icon hands_on %} Hands-on: Running **DESeq2** with group tags
+> <hands-on-title>Running <b>DESeq2</b> with group tags</hands-on-title>
 >
 > 1. **DESeq2** {% icon tool %} with the following parameters:
 >    - *"how"*: `Select group tags corresponding to levels`
@@ -191,7 +194,7 @@ The tool interface will prompt you with the group tags that are available for yo
 >                  - In *"2: Factor level"*:
 >                      - *"Specify a factor level"*: `untreat`
 >                      - *"Select groups that correspond to this factor level"*: `Tags: untreat`
->          - {% icon param-repeat %} Click on *"Insert Factor"* (not on "Insert Factor level")
+>          - Click on {% icon param-repeat %} *"Insert Factor"* (not on "Insert Factor level")
 >          - In "2: Factor"
 >              - "Specify a factor name" to `Sequencing`
 >              - In *"Factor level"*:
@@ -206,6 +209,6 @@ The tool interface will prompt you with the group tags that are available for yo
 {: .hands_on}
 
 # Conclusion
-{:.no_toc}
+
 
 We can select a subset of Collections using the special group tag.

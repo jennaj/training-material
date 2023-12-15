@@ -1,49 +1,53 @@
 ---
 layout: tutorial_hands_on
 
-title: Compute and analyze Essential Biodiversity Variables with PAMPA toolsuite
+title: Compute and analyze biodiversity metrics with PAMPA toolsuite
 zenodo_link: 'https://doi.org/10.5281/zenodo.4264936'
 questions:
-- How to evaluate properly species populations and communities biological state with abundance data?
+- How to evaluate properly populations and communities biological state with abundance data?
 - How does trawl exploited populations of Baltic sea, Southern Atlantic and Scotland are
   doing over time?
-- How to compute and analyze Essential Biodiversity Variables (EBV) on abundance data?
+- How to compute and analyze biodiversity metrics from abundance data?
 objectives:
 - Upload data from DATRAS portal of ICES
 - Pre-process population data with Galaxy
-- Learning how to use an Essential Biodiversity Variables (EBV) scientific workflow from
-  raw data to graphical representations
+- Learning how to use an ecological analysis workflow from raw data to graphical representations
 - Learning how to construct a Generalized Linear (Mixed) Model from a usual ecological question
 - Learning how to interpret a Generalized Linear (Mixed) Model
 time_estimation: 2H
 key_points:
-- Use a Essential Biodiversity Variables workflow
 - Pre-process abundance data
-- Compute Community and Population Essential Biodiversity Variables
-- Construct a GL(M)M with Essential Biodiversity Variables
+- Compute Community and Population metrics
+- Construct a GL(M)M with common biodiversity metrics
 - Interpret (and correct if needed) GL(M)M results
 - Learn about and interpret common tests to evaluate the quality of your GL(M)M
+- Use an Essential Biodiversity Variables workflow
+tags:
+  - Species population EBV class
+  - Community composition EBV class
+  - EBV dataset
+  - EBV workflow
+  - modeling
 contributors:
 - colineroyaux
 - yvanlebras
+- jbmihoub
 
 ---
 
-# Introduction
-{:.no_toc}
 
-This tutorial aims to present the PAMPA Galaxy workflow, how to use it to compute
-Essential Biodiversity Variables (EBV) from species abundance data and analyse it through generalized
+This tutorial aims to present the PAMPA Galaxy workflow, how to use it to compute common
+biodiversity metrics from species abundance data and analyse it through generalized
 linear (mixed) models (GLM and GLMM). This workflow made up of 5 tools will allow you to process
 temporal series data that include at least year, location and species sampled along with
 abundance value and, finally, generate article-ready data products.
 
-The PAMPA workflow is an EBV workflow, like so, it is divided as the EBV classes Community and
-Species-Population. Only the last tool to create a plot from your GLM results is common to the
-two parts of this workflow. Thus, in this tutorial, we'll start by the Community analysis followed
-by the Species-Population analysis.
+The PAMPA workflow is an ecological analysis workflow, like so, it is divided as to do a Community
+analysis and a Population analysis separately in accordance with the biodiversity level described.
+Only the last tool to create a plot from your GLM results is common to the two parts of this workflow.
+Thus, in this tutorial, we'll start by the Community analysis followed by the Population analysis.
 
-> ### {% icon details %} Ecological definitions of Population and Community
+> <details-title>Ecological definitions of Population and Community</details-title>
 >
 > Population: group of individuals of the same species interacting with each other.
 >
@@ -57,20 +61,20 @@ Each part of this workflow has the same elementary steps :
  - **A first tool** to compute metrics:
    - Community metrics ({% tool [Calculate community metrics](toolshed.g2.bx.psu.edu/repos/ecology/pampa_communitymetrics/pampa_communitymetrics/0.0.2) %}):
      Total abundance, Species richness, Shannon index, Simpson index, Hill index and Pielou index
-   - Species-Population metrics ({% tool [Calculate presence absence table](toolshed.g2.bx.psu.edu/repos/ecology/pampa_presabs/pampa_presabs/0.0.2) %}):
+   - Population metrics ({% tool [Calculate presence absence table](toolshed.g2.bx.psu.edu/repos/ecology/pampa_presabs/pampa_presabs/0.0.2) %}):
    Abundance, Presence-absence
  - **A second tool** to compute Generalized Linear (Mixed) Models, testing the effect of ```'site'```, ```'year'``` and/or
    ```'habitat'``` on a metric selected by the user:
    - Community analysis ({% tool [Compute GLM on community data](toolshed.g2.bx.psu.edu/repos/ecology/pampa_glmcomm/pampa_glmcomm/0.0.2) %}):
      The GLM(M) is computed on the whole dataset and, if a separation factor is selected by the user, GLM(M)s are computed on subsets
      of the dataset (example: one GLM(M) per ecoregion)
-   - Species-Population analysis ({% tool [Compute GLM on population data](toolshed.g2.bx.psu.edu/repos/ecology/pampa_glmsp/pampa_glmsp/0.0.2) %}):
+   - Population analysis ({% tool [Compute GLM on population data](toolshed.g2.bx.psu.edu/repos/ecology/pampa_glmsp/pampa_glmsp/0.0.2) %}):
      One GLM(M) is computed on each species separately
- - **A third tool** common for Community and Species-Population analyses with at least ```'year'``` as a fixed effect to
+ - **A third tool** common for Community and Population analyses with at least ```'year'``` as a fixed effect to
    create time-series plots from your GLM(M) results ({% tool [Create a plot from GLM data](toolshed.g2.bx.psu.edu/repos/ecology/pampa_plotglm/pampa_plotglm/0.0.2) %}).
    Two plots will be created for each GLM(M): one from the *"Estimate"* values of the GLM(M) and one from raw values from metrics file.
 
-> ### {% icon details %} Details about Generalized Linear (Mixed) Models
+> <details-title>Details about Generalized Linear (Mixed) Models</details-title>
 >
 > Generalized Linear Models (GLMs) and Generalized Linear Mixed Models (GLMMs) are two extensions of Linear Models (LMs).
 > As LMs uses only Gaussian distribution (for continuous variables), GLMs permits to analyse a wide spectrum of data
@@ -84,11 +88,11 @@ Each part of this workflow has the same elementary steps :
 
 In this tutorial, we'll be working on data extracted from the data portal DATRAS (Database of Trawls Surveys) of the
 International Council for the Exploration of the Sea (ICES). After pre-processing to fit the input format of the tools,
-we'll see how to calculate Essential Biodiversity Variables and construct properly, easily and with good practice,
-several GLMMs to test the effect of ```'year'``` and ```'site'``` on the species richness of each survey studied and
-on the abundance of each species.
+we'll see how to calculate biodiversity metrics and construct properly, easily and with good practice, several GLMMs
+to test the effect of ```'year'``` and ```'site'``` on the species richness of each survey studied and on the abundance
+of each species.
 
-> ### Agenda
+> <agenda-title></agenda-title>
 >
 > In this tutorial, we will cover:
 >
@@ -103,13 +107,14 @@ This first step consist of downloading and properly prepare the data to use it i
 
 ## Data upload
 
-> ### {% icon hands_on %} Hands-on: Data upload
+> <hands-on-title>Data upload</hands-on-title>
 >
-> 1. Create a new history for this tutorial and give it a name (example: "DATRAS data analysis through PAMPA EBV workflow")
+> 1. Create a new history for this tutorial and give it a name (example: "DATRAS data analysis through PAMPA workflow")
 >    for you to find it again later if needed.
 >
->    {% include snippets/create_new_history.md %}
->    {% include snippets/rename_history.md %}
+>    {% snippet faqs/galaxy/histories_create_new.md %}
+>
+>    {% snippet faqs/galaxy/histories_rename.md %}
 >
 > 2. Import the CSV files from [Zenodo](https://doi.org/10.5281/zenodo.4264936) via link with the three following links
 >    ```
@@ -118,18 +123,18 @@ This first step consist of downloading and properly prepare the data to use it i
 >    https://zenodo.org/record/4264936/files/CPUE%20per%20length%20per%20area_C.csv?download=1
 >    ```
 >
->    {% include snippets/import_via_link.md %}
+>    {% snippet faqs/galaxy/datasets_import_via_link.md %}
 >
 >    You may as well use the shared data library or directly download the data from the DATRAS data portal but the previous
 >    method is preferred.
 >
->    {% include snippets/import_from_data_library.md %}
+>    {% snippet faqs/galaxy/datasets_import_from_data_library.md %}
 >
 >    The files used for this tutorial have been imported from DATRAS data portal in October 2020. Those files are
 >    often updated on the data portal. So if you choose to download files directly from DATRAS there may be
 >    some differences with the files on Zenodo and the final results of this tutorial.
 >
->    > ### {% icon tip %} Tip: Importing data from DATRAS data portal
+>    > <tip-title>Importing data from DATRAS data portal</tip-title>
 >    >
 >    > * Go to link: https://datras.ices.dk/Data_products/Download/Download_Data_public.aspx
 >    > * In the field 'Data products' choose 'CPUE per length per area'
@@ -158,13 +163,13 @@ This first step consist of downloading and properly prepare the data to use it i
 >       - tag `#SWCIBTS` to the tabular data file of the SWC-IBTS survey : "CPUE per length per area_B.csv"
 >       - tag `#BITS` to the tabular data file of the BITS survey : "CPUE per length per area_C.csv"
 >
->    {% include snippets/add_tag.md %}
+>    {% snippet faqs/galaxy/datasets_add_tag.md %}
 >
 >    If tags doesn't display directly on your history, refresh the page.
 >
 > 5. Convert datatype CSV to tabular for each data file
 >
->    {% include snippets/convert_datatype.md conversion="Convert CSV to tabular" %}
+>    {% snippet faqs/galaxy/datasets_convert_datatype.md conversion="Convert CSV to tabular" %}
 >
 {: .hands_on}
 
@@ -180,7 +185,7 @@ to assess exploited fish species populations :
 ## Prepare the data
 
 Before starting the preparation of the data, we need to identify which inputs we need for the tools and their format
-(same for Community or Species-Population analyses except for a few details):
+(same for Community or Population analyses except for a few details):
  - Input for the tools to compute metrics: Observation data file containing at least ```'year'``` and "location" sampled
    that might be represented in one field "observation.unit", "species.code" to name the species sampled,
    and ```'number'``` as the abundance value
@@ -188,7 +193,7 @@ Before starting the preparation of the data, we need to identify which inputs we
    "observation.unit" and ```'year'```. It might also contain ```'habitat'```, ```'site'``` and any other information
    about the location at a given ```'year'``` that seems useful (examples: "temperature", "substrate type", "plant cover")
 
-> ### {% icon details %} What is the 'observation.unit' field?
+> <details-title>What is the 'observation.unit' field?</details-title>
 >
 > The 'observation.unit' field is a primary key linking the observation data file and the metrics data file to an observation
 > unit data file. An unique 'observation.unit' identifier represents an unique sampling event at a given year and location.
@@ -198,7 +203,7 @@ Before starting the preparation of the data, we need to identify which inputs we
 >
 {: .details}
 
-> ### {% icon tip %} The 'observation.unit' nomenclature
+> <tip-title>The 'observation.unit' nomenclature</tip-title>
 >
 > For this workflow, two nomenclatures are advised :
 > * The PAMPA file nomenclature:
@@ -220,7 +225,7 @@ Before starting the preparation of the data, we need to identify which inputs we
 >
 {: .tip}
 
-> ### {% icon details %} The difference between fields ```'site'``` and "location"?
+> <details-title>The difference between fields ```'site'``` and "location"?</details-title>
 >
 > Those two fields both inform a geographical indication.
 >
@@ -232,16 +237,16 @@ Before starting the preparation of the data, we need to identify which inputs we
 
 ### Concatenation of data files
 
-> ### {% icon hands_on %} Hands-on: Data files concatenation
+> <hands-on-title>Data files concatenation</hands-on-title>
 >
 > 1. {% tool [Concatenate datasets tail-to-head (cat)](toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_cat/0.1.0) %} select the three `#BITS`, `#EVHOE` and `#SWCIBTS`
 >    datasets in {% icon param-files %} *"Datasets to concatenate"*
 >
->    {% include snippets/select_multiple_datasets.md %}
+>    {% snippet faqs/galaxy/tools_select_multiple_datasets.md %}
 >
 > 2. Suppress the `#BITS`, `#EVHOE` and `#SWCIBTS` tags and add the `#Concatenate` tag to the Concatenated data file
 >
->    {% include snippets/add_tag.md %}
+>    {% snippet faqs/galaxy/datasets_add_tag.md %}
 >
 > 3. Verify if the three header lines have been included in the concatenate with {% tool [Count occurrences of each record](Count1) %}
 >    and following parameters :
@@ -256,7 +261,7 @@ Before starting the preparation of the data, we need to identify which inputs we
 >    - {% icon param-text %} *"With following condition"*: `c1!='Survey'`
 >    - {% icon param-text %} *"Number of header lines to skip"*: `1`
 >
->    > ### {% icon question %} Question
+>    > <question-title></question-title>
 >    > How many header line(s) is left?
 >    >
 >    > Use {% tool [Count occurrences of each record](Count1) %} and following parameters :
@@ -265,12 +270,10 @@ Before starting the preparation of the data, we need to identify which inputs we
 >    >   - {% icon param-select %} *"Delimited by"*: `Tab`
 >    >   - {% icon param-select %} *"How should the results be sorted?"*: `With the rarest value first`
 >    >
->    > You can also "just" rerun {% tool [Count occurrences of each record](Count1) %} job you submit previously updating
->    > the input dataset.
+>    > **Tip:** Hit the rerun button {% icon galaxy-refresh %} on the output of the previous run of {% tool [Count occurrences of each record](Count1) %},
+>    > and change the input dataset.
 >    >
->    > {% include snippets/rerun_tool.md %}
->    >
->    > > ### {% icon solution %} Solution
+>    > > <solution-title></solution-title>
 >    > > One header line is left as the value `Survey` has only `1` occurrence in the first column.
 >    > >
 >    > {: .solution}
@@ -291,16 +294,16 @@ columns needed for the PAMPA workflow considering there is no primary key close 
 
 This `#Concatenate` Filtered data file containing the three surveys will be used to create the observation unit data file and
 compute Community metrics as the Community analysis can be automatically processed on each survey separately.
-However, this file can't be used as it is to compute Species-Population metrics as it may contain data for several
+However, this file can't be used as it is to compute Population metrics as it may contain data for several
 populations of the same species that do not interact with each other. Therefore, we have to work on the three
-`#BITS`, `#EVHOE` and `#SWCIBTS` original tabular files for the Species-Population analysis.
+`#BITS`, `#EVHOE` and `#SWCIBTS` original tabular files for the Population analysis.
 
 Hence, the following manipulations will be applied not only on `#Concatenate` Filtered data file but also on
 the three `#BITS`, `#EVHOE` and `#SWCIBTS` original tabular files used for the concatenation.
 
-{% include snippets/select_multiple_datasets.md %}
 
-> ### {% icon hands_on %} Hands-on: Create the "location" field
+
+> <hands-on-title>Create the "location" field</hands-on-title>
 >
 > 1. {% tool [Column Regex Find And Replace](toolshed.g2.bx.psu.edu/repos/galaxyp/regex_find_replace/regexColumn1/1.0.0) %} with following parameters:
 >    - {% icon param-files %} *"Select cells from"*: `#Concatenate` Filtered data file +
@@ -310,10 +313,11 @@ the three `#BITS`, `#EVHOE` and `#SWCIBTS` original tabular files used for the c
 >         - {% icon param-text %} *"Find Regex"*: `([A-Z]{3}[A-Z]+)`
 >         - {% icon param-text %} *"Replacement"*: `\1-`
 >
+>    {% snippet faqs/galaxy/tools_select_multiple_datasets.md %}
 >
->    > ### {% icon question %} Question
+>    > <question-title></question-title>
 >    > What did we do with this tool?
->    > > ### {% icon solution %} Solution
+>    > > <solution-title></solution-title>
 >    > > We searched for every character chain matching the extended regular expression (Regex) `([A-Z]{3}[A-Z]+)`
 >    > > in the first column "Survey" meaning every character chain of 4 or more capital letters. With the replacement `\1-`
 >    > > we indicated to add `-` after the bracketed character chain. This manipulation is made in order to merge
@@ -335,7 +339,7 @@ the three `#BITS`, `#EVHOE` and `#SWCIBTS` original tabular files used for the c
 >
 {: .hands_on}
 
-> ### {% icon hands_on %} Hands-on: Change column names
+> <hands-on-title>Change column names</hands-on-title>
 >
 > {% tool [Regex Find And Replace](toolshed.g2.bx.psu.edu/repos/galaxyp/regex_find_replace/regex1/1.0.0) %} with following parameters :
 >    - {% icon param-files %} *"Select lines from"*: four `#Concatenate`, `#BITS`, `#EVHOE` and `#SWCIBTS` Merged data files
@@ -357,7 +361,7 @@ the three `#BITS`, `#EVHOE` and `#SWCIBTS` original tabular files used for the c
 >
 {: .hands_on}
 
-> ### {% icon details %} Other tools that could be useful to pre-process data
+> <details-title>Other tools that could be useful to pre-process data</details-title>
 >
 > {% tool Add input name as column %}; {% tool Compute an expression on every row %}
 >; {% tool Table Compute %}; {% tool Join two files on column allowing a small difference %}
@@ -368,14 +372,12 @@ the three `#BITS`, `#EVHOE` and `#SWCIBTS` original tabular files used for the c
 >
 {: .details}
 
-# Compute Essential Biodiversity Variables
+# Compute Community and Population metrics
 
 In this part of the tutorial, we're starting to use tools from the PAMPA toolsuite to compute Community
-and Species-Population Essential Biodiversity Variables. Then, we'll be creating the observation unit file.
+and Population metrics. Then, we'll be creating the observation unit file.
 
-## Compute Community and Species-Population metrics
-
-> ### {% icon hands_on %} Hands-on: Compute Community metrics
+> <hands-on-title>Compute Community metrics</hands-on-title>
 >
 > 1. {% tool [Calculate community metrics](toolshed.g2.bx.psu.edu/repos/ecology/pampa_communitymetrics/pampa_communitymetrics/0.0.2) %} with following parameters:
 >    - {% icon param-file %} *"Input file"*: `#Concatenate` Regex Find And Replace data file
@@ -388,23 +390,25 @@ and Species-Population Essential Biodiversity Variables. Then, we'll be creating
 >
 {: .hands_on}
 
-> ### {% icon hands_on %} Hands-on: Compute Species-Population metrics
+> <hands-on-title>Compute Population metrics</hands-on-title>
 >
 > {% tool [Calculate presence absence table](toolshed.g2.bx.psu.edu/repos/ecology/pampa_presabs/pampa_presabs/0.0.2) %} with {% icon param-files %} *"Input file"*: `#EVHOE`, `#BITS` and `#SWCIBTS` Regex Find And Replace data files
 >
-> Check if the outputs Species-Population metrics data files has the following column names ```"year","location",
+> Check if the outputs Population metrics data files has the following column names ```"year","location",
 > "species.code","number","presence_absence","observation.unit"```.
 >
 {: .hands_on}
 
 ## Creation of the observation unit file
 
-Now that we have the "observation.unit" fields automatically created in the Community and Species-Population
+
+Now that we have the "observation.unit" fields automatically created in the Community and Population
 metrics files we can create the observation unit file from the `#Concatenate` Regex Find And Replace data file with the same
 nomenclature for the "observation.unit" fields, namely:
+
 ```['year' in four numbers]_[Identifier of the precise sampled location in any character chain]```
 
-> ### {% icon hands_on %} Hands-on: Create the observation unit file
+> <hands-on-title>Create the observation unit file</hands-on-title>
 >
 > 1. {% tool [Column Regex Find And Replace](toolshed.g2.bx.psu.edu/repos/galaxyp/regex_find_replace/regexColumn1/1.0.0) %} with following parameters:
 >    - {% icon param-files %} *"Select cells from"*: `#Concatenate` Regex Find And Replace data file
@@ -429,10 +433,10 @@ nomenclature for the "observation.unit" fields, namely:
 >         - {% icon param-text %} *"Find Regex"*: `([0-9]{4})_`
 >         - {% icon param-text %} *"Replacement"*: `\1`
 >
->    > ### {% icon question %} Question
+>    > <question-title></question-title>
 >    > What did we do with this tool?
 >    >
->    > > ### {% icon solution %} Solution
+>    > > <solution-title></solution-title>
 >    > > We removed the `_` we added in the first part of this "Hands_on" from the values of the second column
 >    > > ```'year'``` to get proper numeric values back.
 >    > >
@@ -485,7 +489,7 @@ nomenclature for the "observation.unit" fields, namely:
 >
 {: .hands_on}
 
-# GLMMs and plots on Community and Species-Population metrics
+# GLMMs and plots on Community and Population metrics
 
 Now that we have all our input files for GLM(M) tools ready, we can start computing statistical models to make
 conclusions on our surveys. But before starting to use the {% tool [Compute GLM on community data](toolshed.g2.bx.psu.edu/repos/ecology/pampa_glmcomm/pampa_glmcomm/0.0.2) %}
@@ -516,7 +520,7 @@ the metrics cited above.
 
 As said above, analyses will be separated by the field "Survey" (first column) to avoid bias.
 
-> ### {% icon hands_on %} Hands-on: Compute GLMM on Community metrics
+> <hands-on-title>Compute GLMM on Community metrics</hands-on-title>
 >
 > 1. {% tool [Compute GLM on community data](toolshed.g2.bx.psu.edu/repos/ecology/pampa_glmcomm/pampa_glmcomm/0.0.2) %} with following parameters:
 >     - {% icon param-file %} *"Input metrics file"*: `#Concatenate #Community` metrics data file
@@ -539,7 +543,7 @@ As said above, analyses will be separated by the field "Survey" (first column) t
 >
 {: .hands_on}
 
-> ### {% icon details %} Details on advanced parameters of GLM tools
+> <details-title>Details on advanced parameters of GLM tools</details-title>
 >
 > For now, there are two advanced parameters you can setup in the GLM tools:
 >  - {% icon param-select %} *"Distribution for model"* permits you to choose a probability distribution for your
@@ -552,7 +556,7 @@ As said above, analyses will be separated by the field "Survey" (first column) t
 >
 {: .details}
 
-> ### {% icon details %} How to choose a proper distribution family for your model?
+> <details-title>How to choose a proper distribution family for your model?</details-title>
 >
 > The distribution family for a model is mainly selected by looking at the interest variable of the model:
 >  - If your interest variable is a continuous numeric variable (weigth, size, mean, ...) it follows a
@@ -584,7 +588,7 @@ The GLM tool has three outputs:
    Model has been constructed properly or not. At the end of the file, red flags and advices to improve your model
    are displayed also depending on the same criterias. This file is really useful to look at the bigger picture
 
-> ### {% icon details %} Details on criterias used in 'Your analysis rating file'
+> <details-title>Details on criterias used in 'Your analysis rating file'</details-title>
 >
 > For now, there are nine criterias taken into account to rate GLM(M)s in the Galaxy tools:
 >  - *Plan completeness*: If part of factor levels combinations are inexistant, bias can be induced. (0.5)
@@ -662,10 +666,10 @@ We see no significant effect on the 'global' model which seems logical as it con
 three geographical areas so three distinct communities. However, we observe the same thing with models on each of
 the three surveys separately.
 
-> ### {% icon question %} Question
+> <question-title></question-title>
 > What does this result with no significant effect found mean? How can we explain it?
 >
-> > ### {% icon solution %} Solution
+> > <solution-title></solution-title>
 > > This result would mean that the communities sampled in this dataset haven't change in the whole
 > > time series. However, this result can't be really trusted because the interest variable we selected is
 > > the species richness and for the need of this tutorial we downloaded only part of the dataset with
@@ -712,7 +716,7 @@ Here, for these models, we know these plots won't be trust-worthy but it can sti
 
 ### Create and read plots
 
-> ### {% icon hands_on %} Hands-on: Create plots from Community metrics file and GLMM results
+> <hands-on-title>Create plots from Community metrics file and GLMM results</hands-on-title>
 >
 > {% tool [Create a plot from GLM data](toolshed.g2.bx.psu.edu/repos/ecology/pampa_plotglm/pampa_plotglm/0.0.2) %} with following parameters:
 >  - {% icon param-file %} *"Input glm results file"*: `#Concatenate #Community #unitobs` 'GLM - results
@@ -741,21 +745,22 @@ data set and these species are very commonly found as we selected only 'Standard
 Hence, mean species richness are globally around the maximum number of species taken into account in the surveys (7 for
 `SWC-IBTS`, 6 for `EVHOE` and 3 for `BITS`). Moreover, confidence intervals are very wide and global trends are around 1.
 
-## Compute GLMMs and create plots on Species-Population metrics
+## Compute GLMMs and create plots on Population metrics
 
-For the Species-Population analysis we have the choice to test the effect of ```Year``` and ```Site``` on:
+For the Population analysis we have the choice to test the effect of ```Year``` and ```Site``` on:
  - "Abundance"
  - or "Presence-absence"
 
 As a GLM(M) permits to take into account only one interest variable at a time, we choose to take
 "Abundance" as the interest variable, namely the quantity of a given species at a given time and location.
-This metric is located on the fourth column of the `#EVHOE`, `#BITS` and `#SWCIBTS` Species-Population metrics data files.
+This metric is located on the fourth column of the `#EVHOE`, `#BITS` and `#SWCIBTS` Population metrics data files.
 
 However, if you're interested to test the effects of ```Year``` and ```Site``` on "Presence-absence" you may compute
-the GLM(M) tool again and choose the fifth column of the `#EVHOE`, `#BITS` and `#SWCIBTS` Species-Population metrics data
+the GLM(M) tool again and choose the fifth column of the `#EVHOE`, `#BITS` and `#SWCIBTS` Population metrics data
 files.
 
-> ### {% icon hands_on %} Hands-on: Compute GLMM on Species-Population metrics
+
+> <hands-on-title>Compute GLMM on Population metrics</hands-on-title>
 >
 > 1. {% tool [Compute GLM on population data](toolshed.g2.bx.psu.edu/repos/ecology/pampa_glmsp/pampa_glmsp/0.0.2) %} with following parameters:
 >     - {% icon param-files %} *"Input metrics file"*: `#EVHOE`, `#BITS` and `#SWCIBTS` metrics (here presence absence) data files
@@ -818,10 +823,10 @@ Regarding the significance of the effect ```Year``` as continuous variable:
  - It is significant in the `Platichthys flesus` model.
  - It is significant in the `Pleuronectes platessa` model.
 
-> ### {% icon question %} Question
+> <question-title></question-title>
 > What does these results on the effect ```Year``` as continuous variable mean?
 >
-> > ### {% icon solution %} Solution
+> > <solution-title></solution-title>
 > > The question behind the test of this effect is: "Is the global temporal trend different from 1?"
 > > When it isn't significant as in the `Gadus morhua` model, it means the *"year Estimate"* value isn't
 > > significantly different from 1 so the interest variable "Abundance" hasn't varied much through time.
@@ -871,7 +876,7 @@ Hence, more interesting to look at.
 
 ### Create and read plots
 
-> ### {% icon hands_on %} Hands-on: Create plots from Species-Population metrics file and GLMM results
+> <hands-on-title>Create plots from Population metrics file and GLMM results</hands-on-title>
 >
 > {% tool [Create a plot from GLM data](toolshed.g2.bx.psu.edu/repos/ecology/pampa_plotglm/pampa_plotglm/0.0.2) %} with following parameters:
 >  - {% icon param-files %} *"Input glm results file"*: `#Concatenate #EVHOE #unitobs` `#BITS #Concatenate #unitobs`
@@ -894,10 +899,10 @@ where we see a huge augmentation for the estimated value and the raw abundance (
 are coming back to an average range of values the following year, there should be some bias or even a count or
 typing mistake in the dataset.
 
-> ### {% icon question %} Question
+> <question-title></question-title>
 > How can we see if there is a mistake in the dataframe? How can we deal with it?
 >
-> > ### {% icon solution %} Solution
+> > <solution-title></solution-title>
 > > To see if there is an abnormal value in the ```'number'``` field representing the CPUE abundance we'll use
 > > the {% tool [Sort data in ascending or descending order](toolshed.g2.bx.psu.edu/repos/bgruening/text_processing/tp_sort_header_tool/1.1.1) %}
 > > tool in the "Text Manipulation" tool collection with following parameters :
@@ -928,10 +933,10 @@ CPUE abundance. For `Pleuronectes platessa` a second wave of increase occured be
 ![SWCIBTS population analysis plots](../../images/PAMPA-toolsuite-tutorial/SWCIBTS.png "SWCIBTS population analysis plots")
 
 # Conclusion
-{:.no_toc}
 
-In this tutorial, you analyzed abundance data from three trawl surveys with an Essential Biodiversity Variables
-workflow. You learned how to pre-process abundance data with Galaxy and compute Community and Population metrics.
+
+In this tutorial, you analyzed abundance data from three trawl surveys with an ecological analysis workflow.
+You learned how to pre-process abundance data with Galaxy and compute Community and Population metrics.
 You know now how to construct a proper GL(M)M easily and interpret its results. The construction of a Generalized
 Linear (Mixed) Model has to be well thought out and may need corrections a posteriori by the use of common tests
 that helps evaluate the quality of your GL(M)M (found in the rating file).

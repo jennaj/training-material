@@ -13,24 +13,21 @@ questions:
 - How can I read Parameters from Datasets
 objectives:
 - Learn how to use Workflow Parameters to improve your Workflows
-time_estimation: "10m"
+time_estimation: "30m"
 key_points:
 - Use Workflow Parameters to make your Workflows more versatile
 contributors:
 - mvdbeek
 - hexylena
 level: Intermediate
-subtopic: analyse
+subtopic: workflows
 ---
 
-
-# Introduction
-{:.no_toc}
 
 Workflows are a powerful feature in Galaxy that allow you to chain multiple steps of an analysis together.
 To make a workflow reusable with slightly different settings you can define and use workflow parameters.
 
-> ### Agenda
+> <agenda-title></agenda-title>
 >
 > In this tutorial, we will cover:
 >
@@ -44,7 +41,7 @@ To make a workflow reusable with slightly different settings you can define and 
 We will import a simple workflow and then demonstrate how workflow parameters
 can be added.
 
-> ### {% icon hands_on %} Hands-on: Import integer workflow
+> <hands-on-title>Import integer workflow</hands-on-title>
 >
 > 1. Click on Workflow in the top menu
 > 2. Click on the {% icon galaxy-upload %} import workflow button on the right
@@ -57,7 +54,6 @@ can be added.
 > 4. Click on import workflow
 {: .hands_on}
 
-{% include snippets/edit_workflow.md %}
 
 # Add an integer workflow parameter
 
@@ -70,26 +66,51 @@ that allows the user to set this parameter when running the workflow.
 
 ![Button for selecting connections](../../images/connection-module.png "The new button for creating a workflow parameter connection. When you click this, it will add a new 'input' to the tool that can be connected, just like other tools in workflows.")
 
-> ### {% icon hands_on %} Hands-on: Updating the Workflow
+> <hands-on-title>Updating the Workflow</hands-on-title>
 >
-> 1. Click the **Select first** {% icon tool %} tool in your workflow
-> 2. Find the **Number of lines** parameter in the right hand panel.
-> 3. Click on the workflow connection button {% icon galaxy-wf-connection %} to convert the Number of lines parameter into a workflow parameter connection
+> 1. Upload a dataset using "Paste/Fetch data" with the contents:
+>
+>    ```
+>    E. coli (O19:H34. Extracellular pathogenic)
+>    E. coli (O7:K1. Extracellular pathogenic)
+>    E. coli 536
+>    E. coli APEC O1 (O1:K12:H7. APEC
+>    E. coli CFT083 (O6:K2:H1. UPEC)
+>    E. coli E2348/69 (O127:H6. Enteropathogenic)
+>    E. coli EC4115 (O157:H7 EHEC)
+>    E. coli ED1a O81 (Commensal)
+>    E. coli EDL933 (O157:H7 EHEC)
+>    E. coli F11
+>    E. coli S88 (O45:K1. Extracellular pathogenic)
+>    E. coli SE15 (O150:H5. Commensal)
+>    E. coli Sakai (O157:H7 EHEC)
+>    E. coli TW14359 (O157:H7 EHEC)
+>    E. coli UMN026 (O17:K52:H18. Extracellular pathogenic)
+>    E. coli UTI89 O18:K1:H7. UPEC)
+>    ```
+>
+> 2. Open the **workflow editor**
+>
+>    {% snippet faqs/galaxy/workflows_edit.md %}
+>
+> 3. Click the **Select first** {% icon tool %} tool in your workflow
+> 4. Find the **Number of lines** parameter in the right hand panel.
+> 5. Click on the workflow connection button {% icon galaxy-wf-connection %} to convert the Number of lines parameter into a workflow parameter connection
 >
 >    You will see that a new input with the text `Number of lines` has appeared on the **Select first** tool in the editor.
 >
-> 4. Add a **Simple inputs used for workflow logic**, found under the Inputs section of your toolbox
-> 5. If you click on the Input parameter box in the editor you will see in the `Details panel` that the **Parameter type** is set to `Text`. If you try to connect this parameter to the "Number of lines" parameter you will see that the noodle turns orange and that you cannot create a connection.
+> 6. Add a **Simple inputs used for workflow logic**, found under the Inputs section of your toolbox
+> 7. If you click on the Input parameter box in the editor you will see in the `Details panel` that the **Parameter type** is set to `Text`. If you try to connect this parameter to the "Number of lines" parameter you will see that the noodle turns orange and that you cannot create a connection.
 >
-> 6. Click on Input parameter, and change the **Parameter type** to **Integer**
+> 8. Click on Input parameter, and change the **Parameter type** to **Integer**
 >
-> 7. Connect *"output"* from Input parameter {% icon tool %} to the *"Number of lines"* input of the Select first {% icon tool %}.
+> 9. Connect *"output"* from Input parameter {% icon tool %} to the *"Number of lines"* input of the Select first {% icon tool %}.
 >
-> 8. Save {% icon galaxy-save %} your workflow
+> 10. Save {% icon galaxy-save %} your workflow
 >
-> 9. Run your workflow
+> 11. Run your workflow
 >
->    {% include snippets/run_workflow.md %}
+>     {% snippet faqs/galaxy/workflows_run.md %}
 >
 >    Notice the new input that can be changed before the workflow is run
 {: .hands_on }
@@ -97,7 +118,7 @@ that allows the user to set this parameter when running the workflow.
 
 ![Animation of simple integer workflow parameter](../../images/workflow_integer_param.gif "Integer workflow parameter")
 
-> ### {% icon tip %} Tip: Parameter Reuse
+> <tip-title>Parameter Reuse</tip-title>
 >
 > You can connect a parameter to multiple steps or to multiple parameters within a step, everywhere you need to use it.
 {: .tip}
@@ -111,23 +132,23 @@ The Galaxy tool ``Regex Find And Replace`` can be used to tune such a regular ex
 If we want to make the `foo` part of the regular expression configurable we can
 compose this text parameter using the `Compose text parameter value` tool.
 
-> ### {% icon hands_on %} Hands-on: Compose a text parameter
+> <hands-on-title>Compose a text parameter</hands-on-title>
 > 1. Create a new workflow
 >
->    {% include snippets/create_new_workflow.md %}
+>    {% snippet faqs/galaxy/workflows_create_new.md %}
 >
 > 1. Add an Inputs → **Input Dataset** to the workflow
 > 2. Add an Inputs → **Simple inputs used for workflow logic** to the workflow
 >    - {% icon param-select %} *"Parameter type"*: `Text`
 > 3. Add **Compose text parameter value** {% icon tool %} to the workflow
->     - Add two more repeats, you will need three "Repeat" blocks in total.
->     - In the first repeat:
->       - *"Enter text that should be part of the computed value"*: `/(`
->     - In the second repeat:
+>     - Add two more "Components" using the "Insert components" button in the workflow editor tool form on the right of the screen. You will need three "Component" blocks in total.
+>     - In the first component:
+>       - *"Enter text that should be part of the computed value"*: `(`
+>     - In the second component:
 >       - *"Enter text that should be part of the computed value"*: Leave empty and click "Add connection to module" {% icon galaxy-wf-connection %}
 >       - Connect the output of the **Input parameter** {% icon tool %} to this new input
->     - In the third repeat:
->       - *"Enter text that should be part of the computed value"*: `)/`
+>     - In the third component:
+>       - *"Enter text that should be part of the computed value"*: `)`
 >
 > 4. Add the **Regex Find And Replace** {% icon tool %} to the workflow
 >     - Click on `Insert Check`
@@ -141,7 +162,7 @@ compose this text parameter using the `Compose text parameter value` tool.
 
 You've now built a workflow with a parameterised input! It's time to test it out.
 
-> ### {% icon hands_on %} Hands-on: Running the workflow
+> <hands-on-title>Running the workflow</hands-on-title>
 >
 > 1. Upload a dataset using "Paste/Fetch data" with the contents `wunder`
 >
@@ -151,7 +172,7 @@ You've now built a workflow with a parameterised input! It's time to test it out
 >
 >      This is the value that will be looked for in your input dataset.
 >
->    {% include snippets/run_workflow.md %}
+>    {% snippet faqs/galaxy/workflows_run.md %}
 >
 > 3. Examine the outputs
 {: .hands_on }
@@ -163,7 +184,7 @@ You should see two new datasets in your history. The first dataset has the data 
 Often times it is necessary to calculate a parameter in one step of a workflow and then to use it in another step of the same workflow. This can be accomplished by reading the parameter from a dataset (As long as it is a text, integer, float, boolean or color parameter).
 In this example we will construct a workflow where we calculate the sum of all values in a dataset and then divide the values in this dataset by the sum calculated in the previous step.
 
-> ### {% icon hands_on %} Hands-on: Construct Workflow with Parameters read from a dataset
+> <hands-on-title>Construct Workflow with Parameters read from a dataset</hands-on-title>
 >
 > 1. Create a new workflow
 > 1. Add an **Input dataset** {% icon tool %}
@@ -184,14 +205,14 @@ In this example we will construct a workflow where we calculate the sum of all v
 >       - {% icon param-select %} *"Choose the type of parameter for this field"*: Integer Parameter
 >       - *"Enter integer that should be part of the computed value"*: Click on `Add connection to module` {% icon galaxy-wf-connection %}
 >       - {% icon wf-input %} *"Input"*: Connect the output of the **Parse parameter value** {% icon tool %}
-> 5. Add **Compute an expression on every row** {% icon tool %} to the workflow
->     - *"Add expression as a new column to"*: click on `Add connection to module`, then connect the output of **Compose text parameter value** {% icon tool %}
->     - *"as a new column to"*: Select the output of the **Input dataset** {% icon tool %}
+> 5. Add **Compute on rows** {% icon tool %} to the workflow
+>     - *"Input file"*: Select the output of the **Input dataset** {% icon tool %}
+>     - *"Add expression"*: click on `Add connection to module`, then connect the output of **Compose text parameter value** {% icon tool %}
 {: .hands_on}
 
 With this you're ready to run the workflow!
 
-> ### {% icon hands_on %} Hands-on: Running the workflow
+> <hands-on-title>Running the workflow</hands-on-title>
 >
 > 1. Upload a dataset using "Paste/Fetch data" with the contents, and set the filetype manually to "tabular" during upload
 >
@@ -212,7 +233,7 @@ With this you're ready to run the workflow!
 >
 >    - *"Input dataset"*: the table you have just uploaded
 >
->    {% include snippets/run_workflow.md %}
+>    {% snippet faqs/galaxy/workflows_run.md %}
 >
 > 3. Examine the outputs
 {: .hands_on }
@@ -222,7 +243,7 @@ result of dividing the value in the first column by the sum of all values in
 the first column.
 
 
-> ### {% icon tip %} Tip: You can try many different parameter values at once
+> <tip-title>You can try many different parameter values at once</tip-title>
 >
 > * Often times you need to try a couple of different parameter values and pick the best one.
 >   You can create or compute a dataset for each parameter you would like to try and run the
@@ -230,7 +251,7 @@ the first column.
 {: .tip}
 
 # Conclusion
-{:.no_toc}
+
 
 Galaxy Workflows chain together different steps of an analysis. To make your workflows
 more useful to your colleagues you can add workflow parameters. Sometimes a parameter is not
