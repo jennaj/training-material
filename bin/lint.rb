@@ -314,6 +314,16 @@ module GtnLinter
     @CITATION_LIBRARY
   end
 
+  @JEKYLL_CONFIG = nil
+
+  def self.jekyll_config
+    if @JEKYLL_CONFIG.nil?
+      # Load
+      @JEKYLL_CONFIG = YAML.load_file('_config.yml')
+    end
+    @JEKYLL_CONFIG
+  end
+
   def self.check_bad_cite(contents)
     find_matching_texts(contents, /{%\s*cite\s+([^%]*)\s*%}/i)
       .map do |idx, _text, selected|
@@ -327,6 +337,24 @@ module GtnLinter
           replacement: nil,
           message: "The citation (#{citation_key}) could not be found.",
           code: 'GTN:007'
+        )
+      end
+    end
+  end
+
+  def self.check_bad_icon(contents)
+    find_matching_texts(contents, /{%\s*icon\s+([^%]*)\s*%}/i)
+      .map do |idx, _text, selected|
+      icon_key = selected[1].strip.split[0]
+      if jekyll_config['icon-tag'][icon_key].nil?
+        ReviewDogEmitter.error(
+          path: @path,
+          idx: idx,
+          match_start: selected.begin(0),
+          match_end: selected.end(0),
+          replacement: nil,
+          message: "The icon (#{icon_key}) could not be found, please add it to _config.yml.",
+          code: 'GTN:033'
         )
       end
     end
@@ -531,6 +559,24 @@ module GtnLinter
     end
   end
 
+  def self.empty_alt_text(contents)
+    find_matching_texts(contents, /!\[\]\(/i)
+      .map do |idx, _text, selected|
+      path = selected[1].to_s.strip
+      if !File.exist?(path.gsub(%r{^/}, ''))
+        ReviewDogEmitter.error(
+          path: @path,
+          idx: idx,
+          match_start: selected.begin(0),
+          match_end: selected.end(0),
+          replacement: nil,
+          message: 'The alt text for this image seems to be empty',
+          code: 'GTN:034'
+        )
+      end
+    end
+  end
+
   def self.check_bad_link(contents)
     find_matching_texts(contents, /{%\s*link\s+([^%]*)\s*%}/i)
       .map do |idx, _text, selected|
@@ -544,6 +590,40 @@ module GtnLinter
           replacement: nil,
           message: "The linked file (`#{selected[1].strip}`) could not be found.",
           code: 'GTN:018'
+        )
+      end
+    end
+
+    find_matching_texts(contents, /\]\(\)/i)
+      .map do |idx, _text, selected|
+      path = selected[1].to_s.strip
+      if !File.exist?(path.gsub(%r{^/}, ''))
+        ReviewDogEmitter.error(
+          path: @path,
+          idx: idx,
+          match_start: selected.begin(0),
+          match_end: selected.end(0),
+          replacement: nil,
+          message: 'The link does not seem to have a target.',
+          code: 'GTN:018'
+        )
+      end
+    end
+  end
+
+  def self.check_bad_trs_link(contents)
+    find_matching_texts(contents, /snippet faqs\/galaxy\/workflows_run_trs.md path="([^"]*)"/i)
+      .map do |idx, _text, selected|
+      path = selected[1].to_s.strip
+      if !File.exist?(path)
+        ReviewDogEmitter.error(
+          path: @path,
+          idx: idx,
+          match_start: selected.begin(0),
+          match_end: selected.end(0),
+          replacement: nil,
+          message: "The linked file (`#{path}`) could not be found.",
+          code: 'GTN:036'
         )
       end
     end
@@ -701,6 +781,22 @@ module GtnLinter
     end
   end
 
+  def self.nonsemantic_list(contents)
+    find_matching_texts(contents, />\s*(\*\*\s*[Ss]tep)/)
+      .map do |idx, _text, selected|
+      ReviewDogEmitter.error(
+        path: @path,
+        idx: idx,
+        match_start: selected.begin(1),
+        match_end: selected.end(1) + 1,
+        replacement: nil,
+        message: 'This is a non-semantic list which is bad for accessibility and bad for screenreaders. ' \
+                 'It results in poorly structured HTML and as a result is not allowed.',
+        code: 'GTN:035'
+      )
+    end
+  end
+
   def self.fix_md(contents)
     [
       *fix_notoc(contents),
@@ -719,13 +815,17 @@ module GtnLinter
       *new_more_accessible_boxes_agenda(contents),
       *no_target_blank(contents),
       *check_bad_link(contents),
+      *check_bad_icon(contents),
       *check_looks_like_heading(contents),
       *check_bad_tag(contents),
       *check_useless_box_prefix(contents),
       *check_bad_heading_order(contents),
       *check_bolded_heading(contents),
       *snippets_too_close_together(contents),
-      *zenodo_api(contents)
+      *zenodo_api(contents),
+      *empty_alt_text(contents),
+      *check_bad_trs_link(contents),
+      *nonsemantic_list(contents)
     ]
   end
 
@@ -951,6 +1051,12 @@ module GtnLinter
                                                 code: 'GTN:014')])
     end
 
+    if path.match(/\?/)
+      emit_results([ReviewDogEmitter.file_error(path: path,
+                                                message: 'There ?s in this filename, that is forbidden.',
+                                                code: 'GTN:014')])
+    end
+
     case path
     when /md$/
       handle = File.open(path, 'r')
@@ -987,15 +1093,19 @@ module GtnLinter
       possible_tests = Dir.glob("#{folder}/#{Regexp.escape(basename)}*ym*")
       possible_tests = possible_tests.grep(/#{Regexp.escape(basename)}[_-]tests?.ya?ml/)
 
+      contains_interactive_tool = contents.match(/interactive_tool_/)
+
       if possible_tests.empty?
-        results += [
-          ReviewDogEmitter.file_error(path: path,
-                                      message: 'This workflow is missing a test, which is now mandatory. Please ' \
-                                               'see [the FAQ on how to add tests to your workflows](' \
-                                               'https://training.galaxyproject.org/training-material/faqs/' \
-                                               'gtn/gtn_workflow_testing.html).',
-                                      code: 'GTN:027')
-        ]
+        if !contains_interactive_tool
+          results += [
+            ReviewDogEmitter.file_error(path: path,
+                                        message: 'This workflow is missing a test, which is now mandatory. Please ' \
+                                                 'see [the FAQ on how to add tests to your workflows](' \
+                                                 'https://training.galaxyproject.org/training-material/faqs/' \
+                                                 'gtn/gtn_workflow_testing.html).',
+                                        code: 'GTN:027')
+          ]
+        end
       else
         # Load tests and run some quick checks:
         possible_tests.each do |test_file|
@@ -1009,9 +1119,10 @@ module GtnLinter
           end
 
           test = YAML.safe_load(File.open(test_file))
+          test_plain = File.read(test_file)
           # check that for each test, the outputs is non-empty
           test.each do |test_job|
-            if test_job['outputs'].nil? || test_job['outputs'].empty?
+            if (test_job['outputs'].nil? || test_job['outputs'].empty?) && !test_plain.match(/GTN_RUN_SKIP_REASON/)
               results += [
                 ReviewDogEmitter.file_error(path: path,
                                             message: 'This workflow test does not test the contents of outputs, ' \
@@ -1081,7 +1192,9 @@ module GtnLinter
   end
 
   def self.enumerate_lintable
-    enumerate_type(/bib$/) + enumerate_type(/md$/) + enumerate_type(/md$/, root_dir: 'faqs')
+    enumerate_type(/bib$/) + enumerate_type(/md$/) + enumerate_type(/md$/,
+                                                                    root_dir: 'faqs') + enumerate_type(/md$/,
+                                                                                                       root_dir: 'news')
   end
 
   def self.enumerate_all
